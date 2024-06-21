@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <p>
+        <label for="{{ form.subject.id_for_label }}">Тема:</label>
+        {{ form.subject }}
+        {{ form.subject.errors }}
+    </p>
+    <p>
+        <label for="{{ form.message.id_for_label }}">Повідомлення:</label>
+        {{ form.message }}
+        {{ form.message.errors }}
+    </p>
+    <p>
+        <label for="{{ form.sender.id_for_label }}">Ваша електронна пошта:</label>
+        {{ form.sender }}
+        {{ form.sender.errors }}
+    </p>
+    <p>
+        <label for="{{ form.cc_myself.id_for_label }}">Копіювати мені:</label>
+        {{ form.cc_myself }}
+        {{ form.cc_myself.errors }}
+    </p>
+
+    <button type="submit">Відправити</button>
+</form>
+
+{% endblock %}

@@ -139,3 +139,13 @@ CACHES = {
         'LOCATION': os.path.join(BASE_DIR, 'coolsite_cache'),
     }
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.example.com' 
+EMAIL_PORT = 587  
+EMAIL_USE_TLS = True 
+EMAIL_HOST_USER = 'sandy.tuor.2024@gmail.com'  
+EMAIL_HOST_PASSWORD = '123456789'
+
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

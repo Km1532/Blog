@@ -6,8 +6,9 @@
     <title>{{ title }}</title>
     <link type="text/css" href="{% static 'css/styles.css' %}" rel="stylesheet" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <link rel="shortcut icon" href="{% static 'images/main.ico' %}" type="image/x-icon"/>
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
 <table class="table-page" border="0" cellpadding="0" cellspacing="0">
@@ -15,8 +16,8 @@
 {% block mainmenu %}
     <div class="header">
         <ul id="mainmenu" class="mainmenu">
-            <li class="logo"><a href="{% url 'home' %}"><div class="logo"></div></a></li>
-            {% for m in menu %}
+            <li class="logo"><a href="{% url 'home' %}"><i class="bi bi-bootstrap"></i></a></li>
+                        {% for m in menu %}
             <li><a href="{% url m.url_name %}">{{ m.title }}</a></li>
             {% endfor %}
             {% if request.user.is_authenticated %}
@@ -88,10 +89,13 @@
 
 </td></tr></table>
 </td></tr>
-<tr><td valign="top">
-    <div id="footer">
-        <p>&copy; Команда Sandy</p>
-    </div>
-</td></tr></table>
+<tr>
+    <td valign="bottom">
+        <div id="footer" style="text-align: center;">
+            <p class="footer-text">&copy; Sandy Team</p>
+        </div>
+    </td>
+</tr>
+</table>
 </body>
 </html>

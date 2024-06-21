@@ -79,11 +79,18 @@ ul.list-articles li {
 	background: #3F4137;
 	height: 60px;
 }
-
 .logo {
-	background: url('../images/logo.png') no-repeat 10px 5px;
-	width: 70px;
-	height: 60px;
+    width: 32px; 
+    height: 60px; 
+    display: flex;
+    align-items: flex-end; 
+    justify-content: center; 
+    margin-top: 10px; 
+}
+
+.bi-bootstrap {
+    font-size: 40px; 
+	    color: #000; 
 }
 
 ul.mainmenu {

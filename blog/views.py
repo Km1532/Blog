@@ -45,8 +45,34 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
         c_def = self.get_user_context(title="Додавання статті")
         return dict(list(context.items()) + list(c_def.items()))
 
+from django.shortcuts import render
+from django.core.mail import send_mail, BadHeaderError
+from django.http import HttpResponse
+from .forms import ContactForm
+from .utils import menu
+
 def contact(request):
-    return HttpResponse("Зворотній зв'язок")
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            subject = form.cleaned_data['subject']
+            message = form.cleaned_data['message']
+            sender = form.cleaned_data['sender']
+            cc_myself = form.cleaned_data['cc_myself']
+
+            recipients = ['sandy.tuor.2024@gmail.com']  
+
+            try:
+                send_mail(subject, message, sender, recipients, cc_myself)
+            except BadHeaderError:
+                return HttpResponse('Invalid header found.')
+            return HttpResponse('Дякуємо за ваше повідомлення! Очікуйте на відповідь.')
+
+    else:
+        form = ContactForm()
+
+    return render(request, 'contact.html', {'form': form, 'menu': menu, 'title': 'Зворотній зв\'язок'})
+
 
 def pageNotFound(request, exception):
     return HttpResponseNotFound('<h1>Сторінка не знайдена</h1>')
