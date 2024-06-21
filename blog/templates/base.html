@@ -13,89 +13,90 @@
 <body>
 <table class="table-page" border="0" cellpadding="0" cellspacing="0">
 <tr><td valign="top">
-{% block mainmenu %}
+    {% block mainmenu %}
     <div class="header">
         <ul id="mainmenu" class="mainmenu">
             <li class="logo"><a href="{% url 'home' %}"><i class="bi bi-bootstrap"></i></a></li>
-                        {% for m in menu %}
+            {% for m in menu %}
             <li><a href="{% url m.url_name %}">{{ m.title }}</a></li>
             {% endfor %}
-            {% if request.user.is_authenticated %}
-            <li class="last"> {{ user.username }} | <a href="{% url 'logout' %}">Вийти</a></li>
-            {% else %}
-            <li class="last"><a href="{% url 'register' %}">Реєстрація</a> | <a href="{% url 'login' %}">Увійти</a></li>
-            {% endif %}
+            <li class="last">
+                {% if request.user.is_authenticated %}
+                    {{ user.username }} | <a href="{% url 'logout' %}">Вийти</a>
+                {% else %}
+                    <a href="{% url 'register' %}">Реєстрація</a> | <a href="{% url 'login' %}">Увійти</a>
+                {% endif %}
+            </li>
         </ul>
         <div class="clear"></div>
     </div>
-{% endblock mainmenu %}
-
-<table class="table-content" border="0" cellpadding="0" cellspacing="0">
-<tr>
-    <td valign="top" class="left-chapters">
-    <ul id="leftchapters">
-    {% if cat_selected == 0 %}
-        <li class="selected">Усі категорії</li>
-    {% else %}
-        <li><a href="{% url 'home' %}">Усі категорії</a></li>
-    {% endif %}
-
-    {% for c in cats %}
-    {% if c.women__count > 0 %}
-        {% if c.pk == cat_selected %}
-            <li class="selected">{{ c.name }}</li>
+    {% endblock mainmenu %}
+    <table class="table-content" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+        <td valign="top" class="left-chapters">
+        <ul id="leftchapters">
+        {% if cat_selected == 0 %}
+            <li class="selected">Усі категорії</li>
         {% else %}
-            <li><a href="{{ c.get_absolute_url }}">{{ c.name }}</a></li>
+            <li><a href="{% url 'home' %}">Усі категорії</a></li>
         {% endif %}
-    {% endif %}
-    {% endfor %}
-    </ul>
-    </td>
-<td valign="top" class="content">
-    {% block breadcrumbs %}
-    {% endblock %}
-
-    <div class="content-text">
-    {% block content %}
-    {% endblock %}
-    {% if page_obj.has_other_pages %}
-    <nav class="list-pages">
-        <ul>
-        {% if page_obj.has_previous %}
-        <li class="page-num">
-            <a href="?page={{ page_obj.previous_page_number }}">&lt;</a>
-        </li>
+    
+        {% for c in cats %}
+        {% if c.women__count > 0 %}
+            {% if c.pk == cat_selected %}
+                <li class="selected">{{ c.name }}</li>
+            {% else %}
+                <li><a href="{{ c.get_absolute_url }}">{{ c.name }}</a></li>
+            {% endif %}
         {% endif %}
-
-        {% for p in paginator.page_range %}
-            {% if page_obj.number == p %}
-            <li class="page-num page-num-selected">{{ p }}</li>
-            {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2  %}
+        {% endfor %}
+        </ul>
+        </td>
+    <td valign="top" class="content">
+        {% block breadcrumbs %}
+        {% endblock %}
+    
+        <div class="content-text">
+        {% block content %}
+        {% endblock %}
+        {% if page_obj.has_other_pages %}
+        <nav class="list-pages">
+            <ul>
+            {% if page_obj.has_previous %}
             <li class="page-num">
-                <a href="?page={{ p }}">{{ p }}</a>
+                <a href="?page={{ page_obj.previous_page_number }}">&lt;</a>
             </li>
             {% endif %}
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-        <li class="page-num">
-            <a href="?page={{ page_obj.next_page_number }}">&gt;</a>
-        </li>
+    
+            {% for p in paginator.page_range %}
+                {% if page_obj.number == p %}
+                <li class="page-num page-num-selected">{{ p }}</li>
+                {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2  %}
+                <li class="page-num">
+                    <a href="?page={{ p }}">{{ p }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+    
+            {% if page_obj.has_next %}
+            <li class="page-num">
+                <a href="?page={{ page_obj.next_page_number }}">&gt;</a>
+            </li>
+            {% endif %}
+            </ul>
+        </nav>
         {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-    </div>
-
-</td></tr></table>
-</td></tr>
-<tr>
-    <td valign="bottom">
-        <div id="footer" style="text-align: center;">
-            <p class="footer-text">&copy; Sandy Team</p>
         </div>
-    </td>
-</tr>
-</table>
+    
+    </td></tr></table>
+    </td></tr>
+    <tr>
+        <td valign="bottom">
+            <div id="footer" style="text-align: center;">
+                <p class="footer-text">&copy; Sandy Team</p>
+            </div>
+        </td>
+    </tr>
+    </table>
 </body>
 </html>

@@ -8,4 +8,27 @@
 {% endif %}
 
 {{post.content|linebreaks}}
+
+{% if request.user.is_authenticated %}
+<form method="post" action="{% url 'add_comment' post.slug %}">
+    {% csrf_token %}
+    <textarea name="content" rows="4" cols="50"></textarea><br>
+    <input type="submit" value="Додати коментар">
+</form>
+
+<form method="post" action="{% url 'add_like' post.slug %}">
+    {% csrf_token %}
+    <input type="submit" value="Лайк">
+</form>
+{% else %}
+<p>Авторизуйтесь, щоб додавати коментарі та ставити лайки.</p>
+{% endif %}
+
+<h2>Коментарі:</h2>
+{% for comment in post.comments.all %}
+    <p>{{ comment.content }}</p>
+    <p>{{ comment.user.username }} - {{ comment.created_at }}</p>
+{% empty %}
+    <p>Поки що немає коментарів.</p>
+{% endfor %}
 {% endblock %}

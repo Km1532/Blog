@@ -7,7 +7,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.shortcuts import render
+from django.core.mail import send_mail, BadHeaderError
+from django.http import HttpResponse
+from .forms import ContactForm
+from .utils import menu
 from .forms import *
 from .models import *
 from .utils import *
@@ -33,23 +37,17 @@ def about(request):
     page_obj = paginator.get_page(page_number)
     return render(request, 'about.html', {'page_obj': page_obj, 'menu': menu, 'title': 'Про сайт'})
 
-class AddPage(LoginRequiredMixin, DataMixin, CreateView):
+class AddPage(DataMixin, CreateView):
     form_class = AddPostForm
     template_name = 'addpage.html'
     success_url = reverse_lazy('home')
-    login_url = reverse_lazy('home')
-    raise_exception = True
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Додавання статті")
         return dict(list(context.items()) + list(c_def.items()))
+    
 
-from django.shortcuts import render
-from django.core.mail import send_mail, BadHeaderError
-from django.http import HttpResponse
-from .forms import ContactForm
-from .utils import menu
 
 def contact(request):
     if request.method == 'POST':
@@ -134,3 +132,18 @@ class LoginUser(DataMixin, LoginView):
 def logout_user(request):
     logout(request)
     return redirect('login')
+
+@login_required
+def add_comment(request, post_slug):
+    post = Blog.objects.get(slug=post_slug)
+    if request.method == 'POST':
+        content = request.POST['content']
+        Comment.objects.create(post=post, user=request.user, content=content)
+    return redirect('post', post_slug=post_slug)
+
+@login_required
+def add_like(request, post_slug):
+    post = Blog.objects.get(slug=post_slug)
+    if request.method == 'POST':
+        post.likes.add(request.user)
+    return redirect('post', post_slug=post_slug)
