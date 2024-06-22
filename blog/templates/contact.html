@@ -1,35 +1,39 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>{{ title }}</h1>
+<div class="container">
+    <h1>{{ title }}</h1>
 
-<form method="post">
-    {% csrf_token %}
+    <form method="post" class="mt-4">
+        {% csrf_token %}
 
-    {{ form.non_field_errors }}
+        {{ form.non_field_errors }}
 
-    <p>
-        <label for="{{ form.subject.id_for_label }}">Тема:</label>
-        {{ form.subject }}
-        {{ form.subject.errors }}
-    </p>
-    <p>
-        <label for="{{ form.message.id_for_label }}">Повідомлення:</label>
-        {{ form.message }}
-        {{ form.message.errors }}
-    </p>
-    <p>
-        <label for="{{ form.sender.id_for_label }}">Ваша електронна пошта:</label>
-        {{ form.sender }}
-        {{ form.sender.errors }}
-    </p>
-    <p>
-        <label for="{{ form.cc_myself.id_for_label }}">Копіювати мені:</label>
-        {{ form.cc_myself }}
-        {{ form.cc_myself.errors }}
-    </p>
+        <div class="mb-3">
+            <label for="{{ form.subject.id_for_label }}" class="form-label">Тема:</label>
+            {{ form.subject }}
+            <div class="form-error">{{ form.subject.errors }}</div>
+        </div>
 
-    <button type="submit">Відправити</button>
-</form>
+        <div class="mb-3">
+            <label for="{{ form.message.id_for_label }}" class="form-label">Повідомлення:</label>
+            {{ form.message }}
+            <div class="form-error">{{ form.message.errors }}</div>
+        </div>
 
+        <div class="mb-3">
+            <label for="{{ form.sender.id_for_label }}" class="form-label">Ваша електронна пошта:</label>
+            {{ form.sender }}
+            <div class="form-error">{{ form.sender.errors }}</div>
+        </div>
+
+        <div class="mb-3 form-check">
+            {{ form.cc_myself }}
+            <label for="{{ form.cc_myself.id_for_label }}" class="form-check-label">Копіювати мені</label>
+            <div class="form-error">{{ form.cc_myself.errors }}</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Відправити</button>
+    </form>
+</div>
 {% endblock %}

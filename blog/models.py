@@ -12,8 +12,6 @@ class Blog(models.Model):
     is_published = models.BooleanField(default=True, verbose_name="Публікація")
     cat = models.ForeignKey('Category', on_delete=models.PROTECT, verbose_name="Категорія")
 
-    likes = models.ManyToManyField(User, related_name='blog_likes', blank=True, verbose_name="Лайки")
-
     def __str__(self):
         return self.title
 
@@ -40,6 +38,17 @@ class Comment(models.Model):
         verbose_name_plural = 'Коментарі'
         ordering = ['created_at']
 
+
+class Like(models.Model):
+    post = models.ForeignKey(Blog, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
+
+    class Meta:
+        unique_together = ('post', 'user')
+        verbose_name = 'Лайк'
+        verbose_name_plural = 'Лайки'
+
+
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name="Назва категорії")
     slug = models.SlugField(max_length=255, unique=True, verbose_name="URL")
@@ -54,3 +63,4 @@ class Category(models.Model):
         verbose_name = 'Категорія'
         verbose_name_plural = 'Категорії'
         ordering = ['id']
+    

@@ -1,19 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>{{ title }}</h1>
+<div class="container">
+    <h1>{{ title }}</h1>
 
-<form method="post">
-    {% csrf_token %}
+    <form method="post" class="mt-4">
+        {% csrf_token %}
 
-    <div class="form-error">{{ form.non_field_errors }}</div>
+        <div class="form-error">{{ form.non_field_errors }}</div>
 
-    {% for f in form %}
-    <p><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}: </label>{{ f }}</p>
-    <div class="form-error">{{ f.errors }}</div>
-    {% endfor %}
+        <div class="mb-3">
+            <label class="form-label" for="id_username">Ім'я користувача:</label>
+            {{ form.username }}
+            <div class="form-error">{{ form.username.errors }}</div>
+        </div>
 
-    <button type="submit">Увійти</button>
-</form>
+        <div class="mb-3">
+            <label class="form-label" for="id_password">Пароль:</label>
+            {{ form.password }}
+            <div class="form-error">{{ form.password.errors }}</div>
+        </div>
 
+        <button type="submit" class="btn btn-primary">Увійти</button>
+    </form>
+</div>
 {% endblock %}

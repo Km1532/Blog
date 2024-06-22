@@ -143,7 +143,12 @@ def add_comment(request, post_slug):
 
 @login_required
 def add_like(request, post_slug):
-    post = Blog.objects.get(slug=post_slug)
+    post = get_object_or_404(Blog, slug=post_slug)
+
     if request.method == 'POST':
-        post.likes.add(request.user)
-    return redirect('post', post_slug=post_slug)
+        if post.likes.filter(user=request.user).exists():
+            post.likes.filter(user=request.user).delete()
+        else:
+            Like.objects.create(post=post, user=request.user)
+
+    return redirect('post', post_slug=post.slug)
