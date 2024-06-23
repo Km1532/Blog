@@ -7,46 +7,45 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render
 from django.core.mail import send_mail, BadHeaderError
-from django.http import HttpResponse
-from .forms import ContactForm
+from .forms import ContactForm, AddPostForm, RegisterUserForm, LoginUserForm,CommentForm
+from .models import Blog, Comment, Like, Category
 from .utils import menu
-from .forms import *
-from .models import *
-from .utils import *
 
-class BlogHome(DataMixin, ListView):
+class BlogHome(ListView):
     model = Blog
     template_name = 'index.html'
     context_object_name = 'posts'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Головна сторінка")
-        return dict(list(context.items()) + list(c_def.items()))
+        c_def = {'title': "Головна сторінка"}
+        context = {**context, **c_def, **menu(self.request)}
+        return context
 
     def get_queryset(self):
         return Blog.objects.filter(is_published=True).select_related('cat')
 
+
 def about(request):
-    contact_list = Blog.objects.all()  
+    contact_list = Blog.objects.all()
     paginator = Paginator(contact_list, 3)
 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'about.html', {'page_obj': page_obj, 'menu': menu, 'title': 'Про сайт'})
+    return render(request, 'about.html', {'page_obj': page_obj, 'menu': menu(request), 'title': 'Про сайт'})
 
-class AddPage(DataMixin, CreateView):
+
+class AddPage(CreateView):
     form_class = AddPostForm
     template_name = 'addpage.html'
     success_url = reverse_lazy('home')
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Додавання статті")
-        return dict(list(context.items()) + list(c_def.items()))
-    
+        c_def = {'title': "Додавання статті"}
+        context = {**context, **c_def, **menu(self.request)}
+        return context
 
 
 def contact(request):
@@ -58,7 +57,7 @@ def contact(request):
             sender = form.cleaned_data['sender']
             cc_myself = form.cleaned_data['cc_myself']
 
-            recipients = ['sandy.tuor.2024@gmail.com']  
+            recipients = ['sandy.tuor.2024@gmail.com']
 
             try:
                 send_mail(subject, message, sender, recipients, cc_myself)
@@ -69,25 +68,28 @@ def contact(request):
     else:
         form = ContactForm()
 
-    return render(request, 'contact.html', {'form': form, 'menu': menu, 'title': 'Зворотній зв\'язок'})
+    return render(request, 'contact.html', {'form': form, 'menu': menu(request), 'title': 'Зворотній зв\'язок'})
 
 
 def pageNotFound(request, exception):
     return HttpResponseNotFound('<h1>Сторінка не знайдена</h1>')
 
-class ShowPost(DataMixin, DetailView):
-    model = Blog  
+
+class ShowPost(DetailView):
+    model = Blog
     template_name = 'post.html'
     slug_url_kwarg = 'post_slug'
     context_object_name = 'post'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title=context['post'])
-        return dict(list(context.items()) + list(c_def.items()))
+        c_def = {'title': str(context['post'])}
+        context = {**context, **c_def, **menu(self.request)}
+        return context
 
-class WomenCategory(DataMixin, ListView):
-    model = Blog  
+
+class WomenCategory(ListView):
+    model = Blog
     template_name = 'index.html'
     context_object_name = 'posts'
     allow_empty = False
@@ -95,43 +97,50 @@ class WomenCategory(DataMixin, ListView):
     def get_queryset(self):
         return Blog.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True).select_related('cat')
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         c = Category.objects.get(slug=self.kwargs['cat_slug'])
-        c_def = self.get_user_context(title='Категорія - ' + str(c.name),
-                                      cat_selected=c.pk)
-        return dict(list(context.items()) + list(c_def.items()))
+        c_def = {'title': 'Категорія - ' + str(c.name), 'cat_selected': c.pk}
+        context = {**context, **c_def, **menu(self.request)}
+        return context
 
-class RegisterUser(DataMixin, CreateView):
+
+class RegisterUser(CreateView):
     form_class = RegisterUserForm
     template_name = 'register.html'
     success_url = reverse_lazy('login')
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Реєстрація")
-        return dict(list(context.items()) + list(c_def.items()))
+        c_def = {'title': "Реєстрація"}
+        context = {**context, **c_def, **menu(self.request)}
+        return context
 
     def form_valid(self, form):
         user = form.save()
         login(self.request, user)
         return redirect('home')
 
-class LoginUser(DataMixin, LoginView):
+
+class LoginUser(LoginView):
     form_class = LoginUserForm
     template_name = 'login.html'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Авторизація")
-        return dict(list(context.items()) + list(c_def.items()))
+        c_def = {'title': "Авторизація"}
+        context = {**context, **c_def, **menu(self.request)}
+        return context
 
     def get_success_url(self):
         return reverse_lazy('home')
 
+
+@login_required
 def logout_user(request):
     logout(request)
     return redirect('login')
+
 
 @login_required
 def add_comment(request, post_slug):
@@ -140,6 +149,7 @@ def add_comment(request, post_slug):
         content = request.POST['content']
         Comment.objects.create(post=post, user=request.user, content=content)
     return redirect('post', post_slug=post_slug)
+
 
 @login_required
 def add_like(request, post_slug):
@@ -152,3 +162,38 @@ def add_like(request, post_slug):
             Like.objects.create(post=post, user=request.user)
 
     return redirect('post', post_slug=post.slug)
+
+@login_required
+def add_like_comment(request, post_slug, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    if comment.likes.filter(id=request.user.id).exists():
+        comment.likes.remove(request.user)
+    else:
+        comment.likes.add(request.user)
+    return redirect('post', post_slug=post_slug)
+
+@login_required
+def edit_comment(request, post_slug, comment_id):
+    post = get_object_or_404(Blog, slug=post_slug)
+    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect('post', post_slug=post_slug)
+    else:
+        form = CommentForm(instance=comment)
+
+    return render(request, 'edit_comment.html', {'form': form, 'post': post, 'comment': comment})
+
+@login_required
+def delete_comment(request, post_slug, comment_id):
+    post = get_object_or_404(Blog, slug=post_slug)
+    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+
+    if request.method == 'POST':
+        comment.delete()
+        return redirect('post', post_slug=post_slug)
+
+    return render(request, 'delete_comment.html', {'post': post, 'comment': comment})   

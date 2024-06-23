@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
-{% load static %}  
+{% load static %}
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 {% block content %}
 <div class="container">
     <h1 class="mt-4">{{ post.title }}</h1>
@@ -26,7 +27,7 @@
     <form method="post" action="{% url 'add_like' post.slug %}" class="mb-4">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-danger">
-            {% if user_liked %}
+            {% if request.user in post.likes.all %}
                 <i class="bi bi-heartbreak-fill"></i>
             {% else %}
                 <i class="bi bi-heart-fill"></i> 
@@ -34,15 +35,39 @@
         </button>
     </form>
     {% else %}
-    <p>Авторизуйтесь, щоб  ставити лайки.</p>
+    <p>Авторизуйтесь, щоб ставити лайки.</p>
     {% endif %}
 
     <h2 class="mt-4">Коментарі:</h2>
     <div class="list-group mb-4">
         {% for comment in post.comments.all %}
-        <div class="list-group-item">
-            <p class="mb-1">{{ comment.content }}</p>
-            <small class="text-muted">{{ comment.user.username }} - {{ comment.created_at }}</small>
+        <div class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                <p class="mb-1">{{ comment.content }}</p>
+                <small class="text-muted">{{ comment.user.username }} - {{ comment.created_at }}</small>
+            </div>
+            <div>
+                {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'add_like_comment' post.slug comment.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">
+                        {% if request.user in comment.likes.all %}
+                            <i class="bi bi-heart-fill"></i>
+                        {% else %}
+                            <i class="bi bi-heart"></i> 
+                        {% endif %}
+                    </button>
+                </form>
+                {% endif %}
+                
+                {% if comment.user == request.user %}
+                <a href="{% url 'edit_comment' post.slug comment.id %}" class="btn btn-outline-secondary btn-sm">Редагувати</a>
+                <form method="post" action="{% url 'delete_comment' post.slug comment.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Видалити</button>
+                </form>
+                {% endif %}
+            </div>
         </div>
         {% empty %}
         <div class="list-group-item">

@@ -1,5 +1,4 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,9 +18,9 @@
             <div class="header">
                 <ul id="mainmenu" class="mainmenu">
                     <li class="logo"><a href="{% url 'home' %}"><i class="bi bi-bootstrap"></i></a></li>
-                    {% for m in menu %}
-                    <li><a href="{% url m.url_name %}">{{ m.title }}</a></li>
-                    {% endfor %}
+                    <li><a href="{% url 'about' %}">Про сайт</a></li>
+                    <li><a href="{% url 'contact' %}">Зворотній зв'язок</a></li>
+                    <li><a href="{% url 'add_page' %}">Додати статтю</a></li>
                     <li class="last">
                         {% if request.user.is_authenticated %}
                             {{ user.username }} | <a href="{% url 'logout' %}">Вийти</a>
@@ -33,6 +32,7 @@
                 <div class="clear"></div>
             </div>
             {% endblock mainmenu %}
+            
             <table class="table-content" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                     <td valign="top" class="left-chapters">
@@ -44,7 +44,7 @@
                             {% endif %}
                             
                             {% for c in cats %}
-                                {% if c.women__count > 0 %}
+                                {% if c.num_posts > 0 %}
                                     {% if c.pk == cat_selected %}
                                         <li class="selected">{{ c.name }}</li>
                                     {% else %}
@@ -73,7 +73,7 @@
                                     {% for p in paginator.page_range %}
                                         {% if page_obj.number == p %}
                                         <li class="page-num page-num-selected">{{ p }}</li>
-                                        {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2  %}
+                                        {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2 %}
                                         <li class="page-num">
                                             <a href="?page={{ p }}">{{ p }}</a>
                                         </li>

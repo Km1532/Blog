@@ -1,6 +1,7 @@
 from django.db import models
-from django.urls import reverse
 from django.contrib.auth.models import User
+from django.urls import reverse
+
 
 class Blog(models.Model):
     title = models.CharField(max_length=255, verbose_name="Заголовок")
@@ -29,6 +30,7 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Користувач")
     content = models.TextField(verbose_name="Коментар")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Час створення")
+    likes = models.ManyToManyField(User, related_name='liked_comments', blank=True, verbose_name="Лайки на коментарі")
 
     def __str__(self):
         return f'Коментар від {self.user} до {self.post.title}'
@@ -63,4 +65,3 @@ class Category(models.Model):
         verbose_name = 'Категорія'
         verbose_name_plural = 'Категорії'
         ordering = ['id']
-    

@@ -2,7 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from .models import Blog, Category  
+from .models import Blog, Category, Comment
+
 
 class AddPostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -36,8 +37,14 @@ class LoginUserForm(AuthenticationForm):
     username = forms.CharField(label='Логін', widget=forms.TextInput(attrs={'class': 'form-input'}))
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput(attrs={'class': 'form-input'}))
 
+
 class ContactForm(forms.Form):
     subject = forms.CharField(max_length=100)
     message = forms.CharField(widget=forms.Textarea)
     sender = forms.EmailField()
     cc_myself = forms.BooleanField(required=False)
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content']
