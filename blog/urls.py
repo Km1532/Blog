@@ -19,4 +19,5 @@ urlpatterns = [
     path('post/<slug:post_slug>/', ShowPost.as_view(), name='post'),
     path('post/<slug:post_slug>/edit_comment/<int:comment_id>/', edit_comment, name='edit_comment'),
     path('post/<slug:post_slug>/delete_comment/<int:comment_id>/', delete_comment, name='delete_comment'),
+    path('soon/', views.soon_page, name='soon_page'),
 ]

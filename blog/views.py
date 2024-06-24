@@ -197,3 +197,7 @@ def delete_comment(request, post_slug, comment_id):
         return redirect('post', post_slug=post_slug)
 
     return render(request, 'delete_comment.html', {'post': post, 'comment': comment})   
+
+
+def soon_page(request):
+    return render(request, 'soon_page.html')

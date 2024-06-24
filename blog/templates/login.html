@@ -23,5 +23,19 @@
 
         <button type="submit" class="btn btn-primary">Увійти</button>
     </form>
+
+    <hr>
+    <div class="text-center">
+        <p>Або авторизуйтесь через:</p>
+        <a href="{% url 'soon_page' %}" class="btn btn-dark">
+            <i class="bi bi-google mx-1"></i> Google
+        </a>
+        <a href="{% url 'soon_page' %}" class="btn btn-dark">
+            <i class="bi bi-facebook mx-1"></i> Facebook
+        </a>
+        <a href="{% url 'soon_page' %}" class="btn btn-dark">
+            <i class="bi bi-github mx-1"></i> GitHub
+        </a>
+    </div>
 </div>
 {% endblock %}
