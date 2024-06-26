@@ -23,7 +23,7 @@
                     <li><a href="{% url 'add_page' %}">Додати статтю</a></li>
                     <li class="last">
                         {% if request.user.is_authenticated %}
-                            {{ user.username }} | <a href="{% url 'logout' %}">Вийти</a>
+                            <a href="{% url 'user_profile' request.user.username %}">{{ user.username }}</a> | <a href="{% url 'logout' %}">Вийти</a>
                         {% else %}
                             <a href="{% url 'register' %}">Реєстрація</a> | <a href="{% url 'login' %}">Увійти</a>
                         {% endif %}
