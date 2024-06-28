@@ -1,106 +1,83 @@
-from django.contrib.auth import logout, login
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseNotFound, Http404
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from .forms import *
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.core.mail import send_mail, BadHeaderError
+from .forms import ContactForm, AddPostForm, RegisterUserForm, LoginUserForm, CommentForm, EditProfileForm
 from .models import *
-from .utils import *
+from .utils import menu
+from django.http import JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
-class BlogHome(DataMixin, ListView):
+class BlogHome(ListView):
     model = Blog
     template_name = 'index.html'
     context_object_name = 'posts'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Головна сторінка")
-        return dict(list(context.items()) + list(c_def.items()))
+        c_def = {'title': "Головна сторінка"}
+        context.update(c_def)
+        context.update(menu(self.request))
+        return context
 
     def get_queryset(self):
         return Blog.objects.filter(is_published=True).select_related('cat')
 
 def about(request):
-    contact_list = Blog.objects.all()  
+    contact_list = Blog.objects.all()
     paginator = Paginator(contact_list, 3)
 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'about.html', {'page_obj': page_obj, 'menu': menu, 'title': 'Про сайт'})
+    return render(request, 'about.html', {'page_obj': page_obj, 'menu': menu(request), 'title': 'Про сайт'})
 
-class AddPage(LoginRequiredMixin, DataMixin, CreateView):
+class AddPage(LoginRequiredMixin, CreateView):
     form_class = AddPostForm
     template_name = 'addpage.html'
-    success_url = reverse_lazy('home')
-    login_url = reverse_lazy('home')
-    raise_exception = True
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Додавання статті")
-        return dict(list(context.items()) + list(c_def.items()))
+    login_url = reverse_lazy('login')
 
 def contact(request):
-    return HttpResponse("Зворотній зв'язок")
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            subject = form.cleaned_data['subject']
+            message = form.cleaned_data['message']
+            sender = form.cleaned_data['sender']
+            cc_myself = form.cleaned_data['cc_myself']
 
-def pageNotFound(request, exception):
-    return HttpResponseNotFound('<h1>Сторінка не знайдена</h1>')
+            recipients = ['admin@example.com']
+            if cc_myself:
+                recipients.append(sender)
 
-class ShowPost(DataMixin, DetailView):
-    model = Blog  
-    template_name = 'post.html'
-    slug_url_kwarg = 'post_slug'
-    context_object_name = 'post'
+            try:
+                send_mail(subject, message, sender, recipients)
+            except BadHeaderError:
+                return HttpResponse('Invalid header found.')
+            return redirect('home')
+    else:
+        form = ContactForm()
+    return render(request, 'contact.html', {'form': form, 'menu': menu(request), 'title': 'Зворотній зв\'язок'})
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title=context['post'])
-        return dict(list(context.items()) + list(c_def.items()))
-
-class WomenCategory(DataMixin, ListView):
-    model = Blog  
-    template_name = 'index.html'
-    context_object_name = 'posts'
-    allow_empty = False
-
-    def get_queryset(self):
-        return Blog.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True).select_related('cat')
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c = Category.objects.get(slug=self.kwargs['cat_slug'])
-        c_def = self.get_user_context(title='Категорія - ' + str(c.name),
-                                      cat_selected=c.pk)
-        return dict(list(context.items()) + list(c_def.items()))
-
-class RegisterUser(DataMixin, CreateView):
+class RegisterUser(CreateView):
     form_class = RegisterUserForm
     template_name = 'register.html'
     success_url = reverse_lazy('login')
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Реєстрація")
-        return dict(list(context.items()) + list(c_def.items()))
 
     def form_valid(self, form):
         user = form.save()
         login(self.request, user)
         return redirect('home')
 
-class LoginUser(DataMixin, LoginView):
+class LoginUser(LoginView):
     form_class = LoginUserForm
     template_name = 'login.html'
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Авторизація")
-        return dict(list(context.items()) + list(c_def.items()))
 
     def get_success_url(self):
         return reverse_lazy('home')
@@ -108,3 +85,143 @@ class LoginUser(DataMixin, LoginView):
 def logout_user(request):
     logout(request)
     return redirect('login')
+
+class ShowPost(DetailView):
+    model = Blog
+    template_name = 'post.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comments'] = self.object.comments.select_related('user')
+        context['form'] = CommentForm()
+        return context
+
+class WomenCategory(ListView):
+    model = Blog
+    template_name = 'index.html'
+    context_object_name = 'posts'
+    allow_empty = False
+
+    def get_queryset(self):
+        return Blog.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True).select_related('cat')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = {'title': 'Категорія - ' + str(context['posts'][0].cat), 'cat_selected': context['posts'][0].cat_id}
+        context.update(c_def)
+        context.update(menu(self.request))
+        return context
+
+@login_required
+def add_like(request, post_slug):
+    post = get_object_or_404(Blog, slug=post_slug)
+    Like.objects.get_or_create(post=post, user=request.user)
+    return redirect(post.get_absolute_url())
+
+@login_required
+def add_like_comment(request, post_slug, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, post__slug=post_slug)
+    comment.likes.add(request.user)
+    return redirect(comment.post.get_absolute_url())
+
+@login_required
+def edit_comment(request, post_slug, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, post__slug=post_slug, user=request.user)
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect(comment.post.get_absolute_url())
+    else:
+        form = CommentForm(instance=comment)
+    return render(request, 'edit_comment.html', {'form': form, 'post': comment.post})
+
+@login_required
+def delete_comment(request, post_slug, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, post__slug=post_slug, user=request.user)
+    if request.method == 'POST':
+        comment.delete()
+        return redirect(comment.post.get_absolute_url())
+    return render(request, 'delete_comment.html', {'comment': comment})
+
+@login_required
+def soon_page(request):
+    return render(request, 'soon.html', {'menu': menu(request), 'title': 'Скоро'})
+
+@login_required
+def profile(request):
+    return render(request, 'profile.html', {'menu': menu(request), 'title': 'Профіль'})
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            if hasattr(request.user, 'profile'):
+                if 'avatar' in request.FILES:
+                    request.user.profile.avatar = request.FILES['avatar']
+                    request.user.profile.save()
+            return redirect('profile')
+    else:
+        form = EditProfileForm(instance=request.user)
+    return render(request, 'edit_profile.html', {'form': form, 'menu': menu(request), 'title': 'Редагувати профіль'})
+
+
+class UserProfile(DetailView):
+    model = CustomUser
+    template_name = 'profile.html'
+    slug_field = 'username'
+    slug_url_kwarg = 'username'
+    context_object_name = 'user_profile'
+
+def pageNotFound(request, exception):
+    return HttpResponseNotFound('<h1>Сторінку не знайдено</h1>')
+
+@login_required
+def add_comment(request, post_slug):
+    post = get_object_or_404(Blog, slug=post_slug)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.user = request.user
+            comment.save()
+            return redirect(post.get_absolute_url())
+    else:
+        form = CommentForm()
+    return render(request, 'add_comment.html', {'form': form, 'post': post})
+
+@login_required
+def edit_post(request, post_slug):
+    post = get_object_or_404(Blog, slug=post_slug)
+    if request.user == post.author or request.user.is_staff:
+        if request.method == 'POST':
+            form = AddPostForm(request.POST, request.FILES, instance=post)
+            if form.is_valid():
+                form.save()
+                return redirect(post.get_absolute_url())
+        else:
+            form = AddPostForm(instance=post)
+        return render(request, 'edit_post.html', {'form': form, 'post': post})
+    else:
+        return redirect('home')
+
+@login_required
+@staff_member_required
+def delete_post(request, post_slug):
+    post = get_object_or_404(Blog, slug=post_slug)
+    if request.method == 'POST':
+        post.delete()
+        return redirect('home')
+    return render(request, 'delete_post.html', {'post': post})
+
+@receiver(post_save, sender=CustomUser)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
