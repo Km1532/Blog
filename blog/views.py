@@ -1,15 +1,17 @@
-from django.contrib.auth import logout, login
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseNotFound, Http404
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.core.mail import send_mail, BadHeaderError
-from .forms import ContactForm, AddPostForm, CustomUserCreationForm, RegisterUserForm, LoginUserForm, CommentForm, EditProfileForm
+from .forms import ContactForm, AddPostForm, RegisterUserForm, LoginUserForm, CommentForm, EditProfileForm
 from .models import Blog, Comment, Like, Category, CustomUser
 from .utils import menu
+from django.http import JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
 
 class BlogHome(ListView):
     model = Blog
@@ -19,7 +21,8 @@ class BlogHome(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = {'title': "Головна сторінка"}
-        context = {**context, **c_def, **menu(self.request)}
+        context.update(c_def)
+        context.update(menu(self.request))
         return context
 
     def get_queryset(self):
@@ -33,9 +36,10 @@ def about(request):
     page_obj = paginator.get_page(page_number)
     return render(request, 'about.html', {'page_obj': page_obj, 'menu': menu(request), 'title': 'Про сайт'})
 
-class AddPage(CreateView):
+class AddPage(LoginRequiredMixin, CreateView):
     form_class = AddPostForm
     template_name = 'addpage.html'
+    login_url = reverse_lazy('login')
 
 def contact(request):
     if request.method == 'POST':
@@ -104,23 +108,9 @@ class WomenCategory(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = {'title': 'Категорія - ' + str(context['posts'][0].cat), 'cat_selected': context['posts'][0].cat_id}
-        context = {**context, **c_def, **menu(self.request)}
+        context.update(c_def)
+        context.update(menu(self.request))
         return context
-
-@login_required
-def add_comment(request, post_slug):
-    post = get_object_or_404(Blog, slug=post_slug)
-    if request.method == 'POST':
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.post = post
-            comment.user = request.user
-            comment.save()
-            return redirect(post.get_absolute_url())
-    else:
-        form = CommentForm()
-    return render(request, 'add_comment.html', {'form': form, 'post': post})
 
 @login_required
 def add_like(request, post_slug):
@@ -154,6 +144,7 @@ def delete_comment(request, post_slug, comment_id):
         return redirect(comment.post.get_absolute_url())
     return render(request, 'delete_comment.html', {'comment': comment})
 
+@login_required
 def soon_page(request):
     return render(request, 'soon.html', {'menu': menu(request), 'title': 'Скоро'})
 
@@ -167,7 +158,6 @@ def edit_profile(request):
         form = EditProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
-            # Додаткова перевірка наявності профілю
             if hasattr(request.user, 'profile'):
                 request.user.profile.save()
             return redirect('profile')
@@ -184,3 +174,42 @@ class UserProfile(DetailView):
 
 def pageNotFound(request, exception):
     return HttpResponseNotFound('<h1>Сторінку не знайдено</h1>')
+
+@login_required
+def add_comment(request, post_slug):
+    post = get_object_or_404(Blog, slug=post_slug)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.user = request.user
+            comment.save()
+            return redirect(post.get_absolute_url())
+    else:
+        form = CommentForm()
+    return render(request, 'add_comment.html', {'form': form, 'post': post})
+
+@login_required
+def edit_post(request, post_slug):
+    post = get_object_or_404(Blog, slug=post_slug)
+    if request.user == post.author or request.user.is_staff:
+        if request.method == 'POST':
+            form = AddPostForm(request.POST, request.FILES, instance=post)
+            if form.is_valid():
+                form.save()
+                return redirect(post.get_absolute_url())
+        else:
+            form = AddPostForm(instance=post)
+        return render(request, 'edit_post.html', {'form': form, 'post': post})
+    else:
+        return redirect('home')
+
+@login_required
+@staff_member_required
+def delete_post(request, post_slug):
+    post = get_object_or_404(Blog, slug=post_slug)
+    if request.method == 'POST':
+        post.delete()
+        return redirect('home')
+    return render(request, 'delete_post.html', {'post': post})

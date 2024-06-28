@@ -1,10 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 {% block content %}
 <div class="container">
     <h1 class="mt-4">{{ post.title }}</h1>
@@ -38,46 +34,41 @@
     <p>Авторизуйтесь, щоб ставити лайки.</p>
     {% endif %}
 
+    {% if request.user == post.author or request.user.is_superuser %}
+    <div class="mb-4">
+        <a href="{% url 'edit_post' post.slug %}" class="btn btn-outline-secondary">Редагувати статтю</a>
+        <form method="post" action="{% url 'delete_post' post.slug %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger">Видалити статтю</button>
+        </form>
+    </div>
+    {% endif %}
+
     <h2 class="mt-4">Коментарі:</h2>
-    <div class="list-group mb-4">
+    <div id="comment-list">
         {% for comment in post.comments.all %}
-        <div class="list-group-item d-flex justify-content-between align-items-start">
-            <div class="ms-2 me-auto">
-                <p class="mb-1">{{ comment.content }}</p>
-                <small class="text-muted">{{ comment.user.username }} - {{ comment.created_at }}</small>
-            </div>
-            <div>
-                {% if request.user.is_authenticated %}
-                <form method="post" action="{% url 'add_like_comment' post.slug comment.id %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger">
-                        {% if request.user in comment.likes.all %}
-                            <i class="bi bi-heart-fill"></i>
-                        {% else %}
-                            <i class="bi bi-heart"></i> 
-                        {% endif %}
-                    </button>
-                </form>
-                {% endif %}
-                
-                {% if comment.user == request.user %}
-                <a href="{% url 'edit_comment' post.slug comment.id %}" class="btn btn-outline-secondary btn-sm">Редагувати</a>
-                <form method="post" action="{% url 'delete_comment' post.slug comment.id %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger btn-sm">Видалити</button>
-                </form>
-                {% endif %}
-            </div>
+        <div class="comment mb-3">
+            <p><strong>{{ comment.user.username }}</strong> {{ comment.created_at }}</p>
+            <p>{{ comment.content|linebreaks }}</p>
+            {% if request.user == comment.user or request.user.is_superuser %}
+            <a href="{% url 'edit_comment' post.slug comment.id %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-pencil"></i> Редагувати
+            </a>
+            <form method="post" action="{% url 'delete_comment' post.slug comment.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i> Видалити
+                </button>
+            </form>
+            {% endif %}
         </div>
         {% empty %}
-        <div class="list-group-item">
-            <p class="mb-1">Поки що немає коментарів.</p>
-        </div>
+        <p>Немає коментарів</p>
         {% endfor %}
     </div>
 
     {% if request.user.is_authenticated %}
-    <form method="post" action="{% url 'add_comment' post.slug %}" class="mb-4">
+    <form id="comment-form" method="post" action="{% url 'add_comment' post.slug %}">
         {% csrf_token %}
         <div class="mb-3">
             <label for="commentContent" class="form-label">Додати коментар:</label>
@@ -89,4 +80,5 @@
     <p>Авторизуйтесь, щоб додати коментар.</p>
     {% endif %}
 </div>
+
 {% endblock %}

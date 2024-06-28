@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm
-from .models import Blog, Category, Comment, CustomUser, Profile
+from .models import Blog, Comment, CustomUser, Profile
 
 class AddPostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -50,20 +50,11 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={'cols': 60, 'rows': 10}),
+        }
 
 class EditProfileForm(UserChangeForm):
-    avatar = forms.ImageField(label='Аватар', required=False, widget=forms.FileInput)
-
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'avatar']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance and hasattr(self.instance, 'profile'):
-            self.fields['avatar'].initial = self.instance.profile.avatar
-
-class CustomUserCreationForm(UserCreationForm):
-    email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    first_name = forms.CharField(label='First Name', max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    last_name = forms.CharField(label='Last Name', max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+        fields = ('username', 'email', 'first_name', 'last_name', 'avatar')
