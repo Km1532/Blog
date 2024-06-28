@@ -6,10 +6,10 @@
     <h1>Профіль користувача</h1>
     <div>
         {% if user.profile.avatar %}
-            <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="img-thumbnail" width="150" height="150">
-        {% else %}
-            <img src="{% static 'default_avatar.png' %}" alt="Default Avatar" class="img-thumbnail" width="150" height="150">
-        {% endif %}
+    <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="img-thumbnail" width="150" height="150">
+{% else %}
+    <img src="{% static 'default_avatar.png' %}" alt="Default Avatar" class="img-thumbnail" width="150" height="150">
+{% endif %}
     </div>
     <p>Логін: {{ user.username }}</p>
     <p>Ім'я: {{ user.first_name }}</p>

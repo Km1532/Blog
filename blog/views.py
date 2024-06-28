@@ -8,10 +8,12 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.core.mail import send_mail, BadHeaderError
 from .forms import ContactForm, AddPostForm, RegisterUserForm, LoginUserForm, CommentForm, EditProfileForm
-from .models import Blog, Comment, Like, Category, CustomUser
+from .models import *
 from .utils import menu
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 class BlogHome(ListView):
     model = Blog
@@ -159,11 +161,14 @@ def edit_profile(request):
         if form.is_valid():
             form.save()
             if hasattr(request.user, 'profile'):
-                request.user.profile.save()
+                if 'avatar' in request.FILES:
+                    request.user.profile.avatar = request.FILES['avatar']
+                    request.user.profile.save()
             return redirect('profile')
     else:
         form = EditProfileForm(instance=request.user)
     return render(request, 'edit_profile.html', {'form': form, 'menu': menu(request), 'title': 'Редагувати профіль'})
+
 
 class UserProfile(DetailView):
     model = CustomUser
@@ -213,3 +218,10 @@ def delete_post(request, post_slug):
         post.delete()
         return redirect('home')
     return render(request, 'delete_post.html', {'post': post})
+
+@receiver(post_save, sender=CustomUser)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+    if hasattr(instance, 'profile'):
+        instance.profile.save()

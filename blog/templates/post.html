@@ -48,19 +48,30 @@
     <div id="comment-list">
         {% for comment in post.comments.all %}
         <div class="comment mb-3">
-            <p><strong>{{ comment.user.username }}</strong> {{ comment.created_at }}</p>
-            <p>{{ comment.content|linebreaks }}</p>
-            {% if request.user == comment.user or request.user.is_superuser %}
-            <a href="{% url 'edit_comment' post.slug comment.id %}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-pencil"></i> Редагувати
-            </a>
-            <form method="post" action="{% url 'delete_comment' post.slug comment.id %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-trash"></i> Видалити
-                </button>
-            </form>
-            {% endif %}
+            <div class="d-flex">
+                <div>
+                    {% if comment.user.profile.avatar %}
+                        <img src="{{ comment.user.profile.avatar.url }}" alt="Avatar" class="img-thumbnail" width="50" height="50">
+                    {% else %}
+                        <img src="{% static 'default_avatar.png' %}" alt="Default Avatar" class="img-thumbnail" width="50" height="50">
+                    {% endif %}
+                </div>
+                <div class="ms-3">
+                    <p><strong>{{ comment.user.username }}</strong> {{ comment.created_at }}</p>
+                    <p>{{ comment.content|linebreaks }}</p>
+                    {% if request.user == comment.user or request.user.is_superuser %}
+                    <a href="{% url 'edit_comment' post.slug comment.id %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-pencil"></i> Редагувати
+                    </a>
+                    <form method="post" action="{% url 'delete_comment' post.slug comment.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash"></i> Видалити
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% empty %}
         <p>Немає коментарів</p>
